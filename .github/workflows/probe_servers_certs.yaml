@@ -26,7 +26,7 @@ jobs:
           path: main
           filter: "blob:none" #https://github.blog/2020-12-21-get-up-to-speed-with-partial-clone-and-shallow-clone/
           
-     - name: Install Coreutils
+      - name: Install Coreutils
         run: |
           # Presets
           set -x ; set +e
