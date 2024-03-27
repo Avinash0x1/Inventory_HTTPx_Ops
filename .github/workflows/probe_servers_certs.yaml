@@ -33,10 +33,10 @@ jobs:
           #--------------#
           sudo apt update -y
           sudo apt install bc coreutils curl dos2unix fdupes jq moreutils wget -y
-          sudo apt-get install apt-transport-https apt-utils ca-certificates coreutils dos2unix gnupg2 jq moreutils p7zip-full rsync software-properties-common texinfo util-linux wget -y 2>/dev/null ; sudo apt-get update -y 2>/dev/null
+          sudo apt-get install apt-transport-https apt-utils ca-certificates coreutils dos2unix gnupg2 jq moreutils postgresql postgresql-client p7zip-full rsync software-properties-common texinfo tmux util-linux wget -y 2>/dev/null ; sudo apt-get update -y 2>/dev/null
           # Do again, sometimes fails
           sudo apt install bc coreutils curl dos2unix fdupes jq moreutils wget -y
-          sudo apt-get install apt-transport-https apt-utils ca-certificates coreutils dos2unix gnupg2 jq moreutils p7zip-full rsync software-properties-common texinfo util-linux wget -y 2>/dev/null ; sudo apt-get update -y 2>/dev/null
+          sudo apt-get install apt-transport-https apt-utils ca-certificates coreutils dos2unix gnupg2 jq moreutils postgresql postgresql-client p7zip-full rsync software-properties-common texinfo tmux util-linux wget -y 2>/dev/null ; sudo apt-get update -y 2>/dev/null
         continue-on-error: true
 
       - name: Set TZ to (Asia/Kathmandu)
@@ -111,17 +111,24 @@ jobs:
       - name: Download & Run Checker
         run: |
           # Presets
-          set -x ; set +e
+          set +x ; set +e
           #--------------#
-          # Download
-          curl -qfsSL "https://$INVENTORY_REPO_USER:$INVENTORY_REPO_TOKEN@raw.githubusercontent.com/Azathothas/Inventory/main/.github/scripts/probe_servers_certs.sh" -o "./probe_servers_certs.sh"
-          # Dos2unix
-          dos2unix "./probe_servers_certs.sh"
-          # chmod +xwr
-          sudo chmod +xwr "./probe_servers_certs.sh"
-          # Run
-          # Always run with STD_OUT + STD_IN >/dev/null
-          bash "./probe_servers_certs.sh" >/dev/null 2>&1
-          #Debug
-          #bash "./probe_servers_certs.sh"
+          #Check
+          if pg_isready --host="crt.sh" --port="5432" --username="guest" --dbname="certwatch" --timeout="10" | grep -q "no response" || curl -qfksSL -A "Chrome" -I "https://crt.sh" --write-out "%{http_code}" -o /dev/null | grep -q 502; then
+              echo -e "\n[-] Failed to connect to crt.sh\n"
+              curl -qfksSL -A "Chrome" "https://crt.sh" -I
+            exit 1
+          else
+             # Download
+             curl -qfsSL "https://$INVENTORY_REPO_USER:$INVENTORY_REPO_TOKEN@raw.githubusercontent.com/Azathothas/Inventory/main/.github/scripts/probe_servers_certs.sh" -o "./probe_servers_certs.sh"
+             # Dos2unix
+             dos2unix "./probe_servers_certs.sh"
+             # chmod +xwr
+             sudo chmod +xwr "./probe_servers_certs.sh"
+             # Run
+             # Always run with STD_OUT + STD_IN >/dev/null
+             bash "./probe_servers_certs.sh" >/dev/null 2>&1
+             #Debug
+             #bash "./probe_servers_certs.sh"
+          fi             
         continue-on-error: true
